@@ -1,14 +1,9 @@
 import csv
 import numpy as np
 from random import shuffle
-
-
-def feature_list(data, feature_index):
-    return_list = []
-    for ex in data:
-        return_list.append(ex.features[feature_index])
-
-    return return_list
+import matplotlib.pyplot as plt
+from sklearn import linear_model
+from sklearn.metrics import mean_squared_error
 
 
 class Example:
@@ -77,6 +72,43 @@ class Data:
         self.data = scaled
 
 
+class Model:
+
+    def __init__(self):
+      self.weights = []
+
+    def fit(self, training_data, learning_rate, iterations):
+      print("Training...")
+      self.weights = gradient_descent(training_data, learning_rate, iterations)
+      print("Training Complete.")
+
+
+    def predict(self, testing_data):
+
+      y = []
+      h = []
+
+      print("Testing...")
+      for example in testing_data:
+        prediction = hypothesis(self.weights, example.features)
+
+        print(f"Prediction: {prediction}\t\t Actual: {example.label}")
+
+        h.append(prediction)
+        y.append(example.label)
+
+      print("Testing Complete.")
+      print(f"Testing Loss = {cost(h, y, len(y))}")
+
+
+def feature_list(data, feature_index):
+    return_list = []
+    for ex in data:
+        return_list.append(ex.features[feature_index])
+
+    return return_list
+
+
 def cost(h, y, m):
     return (1 / (2 * m)) * np.sum(np.square(np.array(h) - np.array(y)))
 
@@ -107,6 +139,11 @@ def gradient_descent(data, alpha, num_iterations):
     m = len(data)
     w = [0 for i in range(len(data[0].features) + 1)]
 
+
+    # Plot variables
+    c = []
+    iterations = [i for i in range(num_iterations)]
+
     for i in range(num_iterations):
 
         # Obtain predictions with current weights
@@ -126,31 +163,63 @@ def gradient_descent(data, alpha, num_iterations):
 
             w[i] += -alpha * partial_derivative(np.array(h), y, x, m)
 
+        c.append(cost(h, y, m))
+
+    plt.plot(iterations, c, '-')
+    plt.title("Cost Function")
+    plt.show()
+
     return w
 
 
-def main():
-    data_set = Data("Admission.csv")
-    data_set.scale_features()
+def wout_sklearn():
 
-    training_data, testing_data = data_set.train_test_split(0.3)
+    model = Model()
+    model.fit(training_data, 0.01, 500)
+    print("Coefficients:")
+    print(model.weights)
+    print()
+    model.predict(testing_data)
 
-    print("Training...")
-    weights = gradient_descent(training_data, 0.05, 1000)
-    print("Training Complete.")
+
+def w_sklearn():
+    
+    model = linear_model.LinearRegression()
+
+    X_train = [x.features for x in training_data]
+    y_train = [y.label for y in training_data]
+
+    X_test = [x.features for x in testing_data]
+    y_test = [y.label for y in testing_data]
+
+    model.fit(X_train, y_train)
+    y_predictions = model.predict(X_test)
+
 
     print("Testing...")
-    h = []
-    y = []
-    for example in testing_data:
-        prediction = hypothesis(weights, example.features)
-        h.append(prediction)
-        y.append(example.label)
+    for i in range(len(y_predictions)):
+      print(f"Prediction: {y_predictions[i]}\t\t Actual: {y_test[i]}")
 
-        print(f"Prediction: {prediction}\t\tActual: {example.label}")
     print("Testing Complete.")
-    print(f"Testing Loss = {cost(h, y, len(y))}")
+
+    # The coefficients
+    print('Coefficients: \n', model.coef_)
+    # The mean squared error
+    print('Mean squared error: %.2f'
+          % mean_squared_error(y_test, y_predictions))
+    
+
+def main():
+  data_set = Data("Admission.csv")
+  data_set.scale_features()
+
+  training_data, testing_data = data_set.train_test_split(0.01)
+
+  print("Linear Regression without Sklearn")
+  wout_sklearn()
+
+  print("\nLinear Regression with Sklearn")
+  w_sklearn()
 
 
-if __name__ == '__main__':
-    main()
+main()
