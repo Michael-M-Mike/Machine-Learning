@@ -6,7 +6,7 @@ import numpy as np
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
-model = tf.keras.models.load_model("digit_recognition_model")
+model = tf.keras.models.load_model("digit_recognition_model_CNN")
 
 
 class MyGraphicsView(QtWidgets.QGraphicsView):
@@ -122,8 +122,9 @@ class Ui_MainWindow(object):
         img = np.array(img.convert("L"))
         img = np.invert(img)
 
-        x_test = np.array([img])
-        x_test = tf.keras.utils.normalize(x_test, axis=1)
+        x_test = np.array(img)
+        x_test = x_test / 255
+        x_test = x_test.reshape(1, 28, 28, 1)
         prediction = model.predict(x_test)
 
         prediction = np.argmax(prediction[0])
